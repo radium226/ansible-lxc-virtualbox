@@ -1,0 +1,3 @@
+test ! -f ".ssh/config" && ansible-playbook -i "inventories/virtualbox.ini" "virtualbox.yml" --tags="ssh-config"
+alias ssh="ssh -F '.ssh/config'"
+alias v="ansible-playbook -i 'inventories/virtualbox.ini' 'virtualbox.yml'"

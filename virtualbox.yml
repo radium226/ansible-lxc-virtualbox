@@ -58,3 +58,11 @@
     changed_when: "{{ bootstrap_lxc_guest.rc == 0 }}"
     failed_when: "{{ bootstrap_lxc_guest.rc >= 2 }}"
     tags: ["lxc-guest"]
+
+
+- hosts: lxc-guest
+  gather_facts: no
+  become: yes
+  roles:
+  - { role: "lxc-guest",
+      tags: ["lxc-guest"] }

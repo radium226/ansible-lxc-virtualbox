@@ -3,3 +3,4 @@
 - include: "ipv6.yml"
 - include: "firewall.yml"
 - include: "ssh.yml"
+- include: "motd.yml"

@@ -1,0 +1,9 @@
+---
+- name: install figlet
+  yum:
+    name="ftp://mirror.switch.ch/pool/4/mirror/epel/7/x86_64/f/figlet-2.2.5-9.el7.x86_64.rpm"
+    state=installed
+
+- name: setup motd
+  shell: "figlet -f slant $( hostname ) >/etc/motd"
+  changed_when: False
