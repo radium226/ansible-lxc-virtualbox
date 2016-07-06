@@ -1,1 +1,3 @@
 **/*.retry
+.ssh/config
+.ssh/proxy-id_rsa
