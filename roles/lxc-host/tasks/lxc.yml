@@ -1,0 +1,34 @@
+---
+- name: install yum repository for lxc
+  get_url:
+    url="{{ lxc_host_yum_repo_url }}"
+    dest="/etc/yum.repos.d/lxc.repo"
+
+- name: install prerequisite for lxc
+  yum:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "debootstrap"
+  - "perl"
+
+- name: install lxc
+  yum:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "lxc"
+  - "lxc-templates"
+
+- name: configure lxc
+  template:
+    src="templates/etc_lxc_default.conf.j2"
+    dest="/etc/lxc/default.conf"
+
+- name: start lxc services
+  service:
+    name="{{ item }}.service"
+    state=started
+    enabled=yes
+  with_items:
+  - "lxc"

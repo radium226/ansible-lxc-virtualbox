@@ -1,0 +1,9 @@
+strict-order
+domain={{ lxc_host_domain }}
+expand-hosts
+except-interface=lo
+bind-dynamic
+interface={{ lxc_host_bridge_name }}
+dhcp-range={{ lxc_host_dhcp_range }}
+dhcp-no-override
+dhcp-lease-max=253

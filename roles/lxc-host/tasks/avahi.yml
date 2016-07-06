@@ -1,0 +1,28 @@
+---
+- name: install Avahi
+  yum:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "avahi"
+  - "avahi-tools"
+  - "nss-mdns"
+
+- name: configure Avahi
+  lineinfile:
+    dest="/etc/avahi/avahi-daemon.conf"
+    regexp="{{ item.regexp }}"
+    line="{{ item.line }}"
+    backrefs=yes
+  with_items:
+#  - { regexp: "^#?disable-publishing=", line: "disable-publishing=yes" }
+#  - { regexp: "^#?browse-domains=", line: "browse-domains=lxc" }
+  - { regexp: "^rlimit-nproc=(.*)", line: "#rlimit-nproc=\\1" }
+  register:
+    configure_avahi
+
+- name: restart Avahi
+  service:
+    name="avahi-daemon.service"
+    state=restarted
+  when: "{{ configure_avahi.changed }}"

@@ -1,0 +1,60 @@
+---
+# We generate the SSH config we're going to use...
+- hosts: localhost
+  gather_facts: no
+  vars:
+    virtualbox_ssh_port: 2222
+  tasks:
+  - name: generate SSH config
+    template:
+      src=".ssh/config.j2"
+      dest=".ssh/config"
+    tags: ["ssh-config"]
+
+
+# We prepare the LXC host
+- hosts: lxc-host[0]
+  gather_facts: no
+  tasks:
+  - name: bootstrap lxc host
+    command: "files/bootstrap.sh '{{ inventory_hostname }}'"
+    delegate_to: localhost
+    register: bootstrap_lxc_host
+    changed_when: "{{ bootstrap_lxc_host.rc == 0 }}"
+    failed_when: "{{ bootstrap_lxc_host.rc >= 2 }}"
+    tags: ["lxc-host"]
+  - name: retreive lxc host private SSH key
+    fetch:
+      src="/home/{{ ansible_user }}/.ssh/id_rsa"
+      dest="./.ssh/proxy-id_rsa"
+      flat=yes
+    tags: ["ssh-config", "lxc-host"]
+
+- hosts: lxc-host[0]
+  gather_facts: no
+  become: yes
+  roles:
+  - { role: "lxc-host",
+      tags: ["lxc-host"] }
+
+
+# We create the LXC guests
+- hosts: lxc-guest
+  gather_facts: no
+  tasks:
+  - name: create lxc guests
+    script: "files/create-lxc-guest.sh '{{ inventory_hostname }}'"
+    become: yes
+    delegate_to: "{{ groups['lxc-host'][0] }}"
+    register: create_lxc_guest
+    changed_when: "{{ create_lxc_guest.rc == 0 }}"
+    failed_when: "{{ create_lxc_guest.rc >= 2 }}"
+    tags: ["lxc-guest"]
+
+  - name: bootstrap lxc guests
+    command: "files/bootstrap.sh '{{ inventory_hostname }}'"
+    delegate_to: localhost
+    register: bootstrap_lxc_guest
+    changed_when: "{{ bootstrap_lxc_guest.rc == 0 }}"
+    failed_when: "{{ bootstrap_lxc_guest.rc >= 2 }}"
+    tags: ["lxc-guest"]

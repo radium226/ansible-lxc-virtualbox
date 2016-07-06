@@ -1,0 +1,11 @@
+---
+- name: disable permanently IPv6
+  template:
+    src="templates/etc_sysctl.d_99-ipv6.conf.j2"
+    dest="/etc/sysctl.d/10-disable-ipv6.conf"
+  register:
+    disable_permanently_ipv6
+
+- name: reload sysctl
+  command: "sysctl -p"
+  when: "{{ disable_permanently_ipv6.changed }}"

@@ -1,0 +1,28 @@
+---
+- name: configure bridge
+  template:
+    src="{{ item.src }}"
+    dest="{{ item.dest }}"
+  with_items:
+  - { src: "templates/etc_sysconfig_network-scripts_ifcfg-bridge_name.j2", dest: "/etc/sysconfig/network-scripts/ifcfg-{{ lxc_host_bridge_name }}"}
+  register: configure_bridge
+
+- name: restart network
+  service:
+    name="network.service"
+    state=restarted
+  when: "{{ configure_bridge.changed }}"
+
+- name: set bridge in trusted zone
+  firewalld:
+    zone="trusted"
+    interface="{{ lxc_host_bridge_name }}"
+    permanent=yes
+    state=enabled
+  register: interface_trusted_zone
+
+- name: restart firewall
+  service:
+    name="firewalld"
+    state=restarted
+  when: "{{ interface_trusted_zone.changed }}"

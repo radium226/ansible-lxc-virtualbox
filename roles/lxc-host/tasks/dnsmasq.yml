@@ -1,0 +1,45 @@
+---
+- name: install dnsmasq
+  yum:
+    name="dnsmasq"
+    state=installed
+
+- name: configure dnsmasq
+  template:
+    src="templates/etc_dnsmasq.conf.j2"
+    dest="/etc/dnsmasq.conf"
+
+- name: start dnsmasq
+  service:
+    name="dnsmasq"
+    state=started
+    enabled=yes
+
+- name: append bridge IP in DHCP client
+  lineinfile:
+    dest="/etc/dhclient.conf"
+    create=yes
+    line="prepend domain-name-servers {{ lxc_host_bridge_ip }};"
+  register: append_bridge_ip
+
+- name: restart network
+  service:
+    name="network"
+    state=restarted
+  when: "{{ append_bridge_ip.changed }}"
+
+#- name: configure firewall
+#  firewalld:
+#    zone="internal"
+#    service="dhcp"
+#    permanent=yes
+#    state=enabled
+#  with_items:
+#  - "dhcp-client"
+#  register: dhcp_internal_zone
+
+#- name: restart firewall
+#  service:
+#    name="firewalld"
+#    state=restarted
+#  when: "{{ dhcp_internal_zone.changed }}"

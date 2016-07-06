@@ -1,0 +1,33 @@
+- name: install libvirt
+  yum:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "libvirt"
+#  - "libvirt-client"
+
+- name: configure DHClient
+  lineinfile:
+    dest="/etc/dhcp/dhclient.conf"
+    line="prepend domain-name-servers 192.168.122.1;"
+    create=yes
+    state=present
+  register: configure_dhclient
+
+- name: restart NetworkManager
+  service:
+    name="NetworkManager"
+    state=restarted
+  when: "{{ configure_dhclient.changed }}"
+
+- name: start libvirt services
+  service:
+    name="{{ item }}.service"
+    state=started
+    enabled=yes
+  with_items:
+  - "libvirtd"
+#  - "libvirt-guests"
+
+- name: configure libvirt
+  script: "files/virsh-network-add-domain.sh 'default' 'lxc'"

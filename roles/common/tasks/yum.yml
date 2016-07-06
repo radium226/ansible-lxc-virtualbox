@@ -1,0 +1,42 @@
+---
+# We do it with sed instead of lineinfile because of SELinux and libselinux-python
+- name: Disable YUM's fastestmirror plugin
+  shell: "if grep -q 'enabled=0' '/etc/yum/pluginconf.d/fastestmirror.conf'; then exit 1; else sed -i -e 's,^enabled=.*,enabled=0,g' '/etc/yum/pluginconf.d/fastestmirror.conf'; exit 0; fi"
+  failed_when: False
+  register: check_yum_fastestmirror
+  changed_when: "{{ check_yum_fastestmirror.rc == 0 }}"
+
+- name: install EPEL YUM repository
+  yum:
+    name="epel-release"
+    state=installed
+
+- name: install YUM packages
+  yum:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "yum-utils"
+  - "yum-cron"
+  - "python-pip"
+  - "libselinux-python"
+  - "nc"
+  - "lsof"
+  - "strace"
+  - "nmap"
+  - "moreutils"
+  - "xmlstarlet"
+  - "ncdu"
+  - "ack"
+
+- name: install Python modules
+  pip:
+    name="{{ item }}"
+    state=present
+  with_items:
+  - "httplib2"
+
+- name: configure YUM auto-updates
+  template:
+    src="templates/etc_yum_yum-cron.conf.j2"
+    dest="/etc/yum/yum-cron.conf"
