@@ -4,3 +4,7 @@ lxc.network.flags = up
 lxc.network.name = eth0
 lxc.start.auto = 1
 lxc.mount.entry = /var/cache/yum var/cache/yum none rw,bind 0.0
+lxc.start.auto = 1
+lxc.group = onboot
+lxc.kmsg = 0
+lxc.autodev = 1
