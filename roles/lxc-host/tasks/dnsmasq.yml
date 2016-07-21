@@ -1,13 +1,24 @@
 ---
 - name: install dnsmasq
-  yum:
+  apt:
     name="dnsmasq"
     state=installed
 
 - name: configure dnsmasq
   template:
-    src="templates/etc_dnsmasq.conf.j2"
-    dest="/etc/dnsmasq.conf"
+    src="etc_dnsmasq.d_lxc-host.j2"
+    dest="/etc/dnsmasq.d/lxc-host"
+
+- name: remove LXC built-in configuration
+  file:
+    path="/etc/dnsmasq.d/lxc"
+    state=absent
+
+- name: prevent dnsmasq to overwrite the /etc/resolv.conf file
+  lineinfile:
+    dest="/etc/default/dnsmasq"
+    regexp="#?DNSMASQ_EXCEPT=.*"
+    line="DNSMASQ_EXCEPT=lo"
 
 - name: start dnsmasq
   service:
@@ -17,16 +28,25 @@
 
 - name: append bridge IP in DHCP client
   lineinfile:
-    dest="/etc/dhclient.conf"
+    dest="/etc/dhcp/dhclient.conf"
     create=yes
     line="prepend domain-name-servers {{ lxc_host_bridge_ip }};"
   register: append_bridge_ip
 
 - name: restart network
   service:
-    name="network"
+    name="networking"
     state=restarted
   when: "{{ append_bridge_ip.changed }}"
+
+- name: configure UFW for dnsmasq
+  ufw:
+    rule="{{ item.rule }}"
+    port="{{ item.port }}"
+  with_items:
+  - { port: "53", rule: "allow" }
+  - { port: "67", rule: "allow" }
+  - { port: "68", rule: "allow" }
 
 #- name: configure firewall
 #  firewalld:

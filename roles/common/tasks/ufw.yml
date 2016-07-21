@@ -1,0 +1,37 @@
+- name: install UFW
+  apt:
+    name="ufw"
+    state=installed
+
+- name: start UFW
+  service:
+    name="ufw"
+    enabled=yes
+    state=started
+
+- name: enable UFW logging
+  ufw:
+    logging=on
+
+- name: configure UFW default policy
+  ufw:
+    policy="{{ item.policy }}"
+    direction="{{ item.direction }}"
+  with_items:
+  - { direction: "incoming", policy: "deny" }
+  - { direction: "outgoing", policy: "allow" }
+  notify:
+  - reload UFW
+
+- name: configure UFW rules
+  ufw:
+    rule="{{ item.rule }}"
+    port="{{ item.port }}"
+  with_items:
+  - { port: "ssh", rule: "allow" }
+  notify:
+  - reload UFW
+
+- name: enable UFW
+  ufw:
+    state=enabled

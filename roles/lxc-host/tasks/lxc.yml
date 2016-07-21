@@ -1,29 +1,32 @@
 ---
-- name: install yum repository for lxc
-  get_url:
-    url="{{ lxc_host_yum_repo_url }}"
-    dest="/etc/yum.repos.d/lxc.repo"
-
-- name: install prerequisite for lxc
-  yum:
-    name="{{ item }}"
-    state=installed
-  with_items:
-  - "debootstrap"
-  - "perl"
-
-- name: install lxc
-  yum:
+- name: install LXC
+  apt:
     name="{{ item }}"
     state=installed
   with_items:
   - "lxc"
-  - "lxc-templates"
 
-- name: configure lxc
+- name: disable LXC built-in bridge
+  lineinfile:
+    dest="/etc/default/lxc-net"
+    regexp="#?USE_LXC_BRIDGE=.*"
+    line="USE_LXC_BRIDGE=\"false\""
+
+- name: configure LXC
   template:
     src="templates/etc_lxc_default.conf.j2"
     dest="/etc/lxc/default.conf"
+
+- name: create drop-in folder for LXC service
+  file:
+    dest="/etc/systemd/system/lxc.service.d"
+    state=directory
+
+- name: add dnsmasq drop-in for LXC service
+  template:
+    src="etc_systemd_system_lxc.service.d_99-dnsmasq.conf.j2"
+    dest="/etc/systemd/system/lxc.service.d/99-dnsmasq.conf"
+
 
 - name: start lxc services
   service:

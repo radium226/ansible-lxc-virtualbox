@@ -1,28 +1,31 @@
 ---
+- name: install bridge-utils
+  apt:
+    name="bridge-utils"
+    state=installed
+
+# FIXME: Put that in a template
 - name: configure bridge
-  template:
-    src="{{ item.src }}"
-    dest="{{ item.dest }}"
+  lineinfile:
+    dest="/etc/network/interfaces"
+    line="{{ item }}"
+    insertafter=EOF
   with_items:
-  - { src: "templates/etc_sysconfig_network-scripts_ifcfg-bridge_name.j2", dest: "/etc/sysconfig/network-scripts/ifcfg-{{ lxc_host_bridge_name }}"}
+  - "auto {{ lxc_host_bridge_name }}"
+  - "iface {{ lxc_host_bridge_name }} inet static"
+  - "  netmask {{ lxc_host_bridge_netmask }}"
+  - "  address {{ lxc_host_bridge_ip }}"
+  - "  bridge_ports none"
   register: configure_bridge
 
 - name: restart network
   service:
-    name="network.service"
+    name="networking.service"
     state=restarted
   when: "{{ configure_bridge.changed }}"
 
-- name: set bridge in trusted zone
-  firewalld:
-    zone="trusted"
-    interface="{{ lxc_host_bridge_name }}"
-    permanent=yes
-    state=enabled
-  register: interface_trusted_zone
-
-- name: restart firewall
-  service:
-    name="firewalld"
-    state=restarted
-  when: "{{ interface_trusted_zone.changed }}"
+#- name: restart firewall
+#  service:
+#    name="firewalld"
+#    state=restarted
+#  when: "{{ interface_trusted_zone.changed }}"

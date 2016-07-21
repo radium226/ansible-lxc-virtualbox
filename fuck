@@ -1,0 +1,15 @@
+sysctl net.ipv4.ip_forward=1
+iptables -X
+iptables -F
+iptables -t nat -X
+iptables -t nat -F
+
+iptables -I INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
+
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i br0 -o eth0 -j ACCEPT

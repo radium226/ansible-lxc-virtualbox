@@ -1,6 +1,6 @@
 ---
-- include: "yum.yml"
+- include: "apt.yml"
 - include: "ipv6.yml"
-- include: "firewall.yml"
+- include: "ufw.yml"
 - include: "ssh.yml"
-- include: "motd.yml"
+#- include: "motd.yml"

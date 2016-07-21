@@ -3,7 +3,7 @@
 - hosts: localhost
   gather_facts: no
   vars:
-    virtualbox_ssh_port: 2222
+    virtualbox_ssh_port: 1234
   tasks:
   - name: generate SSH config
     template:
@@ -15,9 +15,11 @@
 # We prepare the LXC host
 - hosts: lxc-host[0]
   gather_facts: no
+  vars:
+    bootstrap_ssh_user: "adrien"
   tasks:
   - name: bootstrap lxc host
-    command: "files/bootstrap.sh '{{ inventory_hostname }}'"
+    command: "files/bootstrap.sh '{{ inventory_hostname }}' '{{ bootstrap_ssh_user}}'"
     delegate_to: localhost
     register: bootstrap_lxc_host
     changed_when: "{{ bootstrap_lxc_host.rc == 0 }}"
@@ -34,8 +36,8 @@
   gather_facts: no
   become: yes
   roles:
-  - { role: "lxc-host",
-      tags: ["lxc-host"] }
+  - { role: "common",   tags: ["lxc-host"] }
+  - { role: "lxc-host", tags: ["lxc-host"] }
 
 
 # We create the LXC guests
@@ -66,5 +68,5 @@
   serial: 1
   become: yes
   roles:
-  - { role: "lxc-guest",
-      tags: ["lxc-guest"] }
+  - { role: "common",    tags: ["lxc-guest"] }
+  - { role: "lxc-guest", tags: ["lxc-guest"] }

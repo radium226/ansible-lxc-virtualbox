@@ -1,6 +1,6 @@
 ---
 - name: install Avahi
-  yum:
+  apt:
     name="{{ item }}"
     state=installed
   with_items:

@@ -6,3 +6,5 @@
     line="{{ item.line }}"
   with_items:
   - { regexp: "^#?UseDNS", line: "UseDNS no" }
+  notify:
+  - reload SSH

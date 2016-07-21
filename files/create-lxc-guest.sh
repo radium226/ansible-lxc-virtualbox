@@ -16,39 +16,28 @@ create_lxc()
 	declare hostname="${1}"
 	declare lxc_dp="/var/lib/lxc"
 	declare rootfs_dp="${lxc_dp}/${hostname}/rootfs"
+	declare user="adrien"
+	declare password="adrien"
 
   # -t download -- -d centos -r 7 -a amd64
-	lxc-create -n "${hostname}" -t "centos" -- -R 7 --fqdn "${hostname}"
-
-	cat <<-EOF >"${rootfs_dp}/etc/sysconfig/network-scripts/ifcfg-eth0"
-	DEVICE=eth0
-	BOOTPROTO=dhcp
-	ONBOOT=yes
-	TYPE=Ethernet
-	HOSTNAME=${hostname}
-	EOF
+	lxc-create --name "${hostname}" --template "ubuntu" -- --release "xenial" --user "${user}" --password "${password}"
 
  	sed -i -r -e 's/^#?GSSAPIAuthentication .+/GSSAPIAuthentication no/' "${rootfs_dp}/etc/ssh/sshd_config"
 	sed -i -r -e 's/^#?UseDNS .+/UseDNS no/' "${rootfs_dp}/etc/ssh/sshd_config"
-	sed -i -r 	-e 's/^enabled=.*/enabled=0/' "${rootfs_dp}/etc/yum/pluginconf.d/fastestmirror.conf"
 
-	mkdir -p "${rootfs_dp}/root/.ssh"
-	su - "${SUDO_USER}" -c "cat '/home/${SUDO_USER}/.ssh/id_rsa.pub'" >"${rootfs_dp}/root/.ssh/authorized_keys"
-	echo root:root | chroot "${rootfs_dp}" chpasswd
-
-	#chroot "${rootfs_dp}" /bin/sh -c 'yum -y install "epel-release" && yum -y install "avahi" "nss-mdns" && systemctl enable "avahi-daemon.service"'
-	#sed -i -r -e 's,^#?rlimit-nproc=(.*),#rlimit-nproc=\1,g' "${rootfs_dp}/etc/avahi/avahi-daemon.conf"
-
-	#sed -i "s,\(ExecStart=.*\),\1 --no-rlimits,g" "${rootfs_dp}/usr/lib/systemd/system/avahi-daemon.service"
-	#sed -i -e 's/^#domain-name=.*/domain-name=lxc/' "${rootfs_dp}/etc/avahi/avahi-daemon.conf"
-
-	#su - "${SUDO_USER}" -c "ssh-keygen -R '${hostname}.lxc'"
+	cat <<EOF >"${rootfs_dp}/etc/sudoers.d/${user}"
+Defaults:${user} !requiretty
+Defaults:${user} secure_path = /sbin:/bin:/usr/sbin:/usr/local/bin:/usr/bin
+Defaults:${user} env_keep += "PATH"
+${user} ALL=(ALL) NOPASSWD:ALL
+EOF
 }
 
 main()
 {
   declare fqdn="${1}"
   declare hostname="$( echo "${fqdn}" | cut -d'.' -f1 )"
+	declare user="adrien"
 
 	declare return_code=1
 
@@ -62,6 +51,11 @@ main()
 		wait_for_ssh "${fqdn}"
 		return_code=0
 	fi
+
+	# FIXME: Add a new step
+	declare ssh_pub_key="$( su - "${SUDO_USER}" -c "cat \"\${HOME}/.ssh/id_rsa.pub\"" )"
+	lxc-attach --name "${hostname}" -- su "${user}" -c "mkdir -p \"\${HOME}/.ssh\" ; chmod 700 \"\${HOME}/.ssh\""
+	lxc-attach --name "${hostname}" -- su "${user}" -c "echo '${ssh_pub_key}' >\"\${HOME}/.ssh/authorized_keys\""
 
 	return ${return_code}
 	#su - "${SUDO_USER}" -c "ssh-keyscan '${hostname}.lxc' >>'/home/${SUDO_USER}/.ssh/known_hosts'"

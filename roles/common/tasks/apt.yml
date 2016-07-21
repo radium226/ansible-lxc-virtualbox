@@ -1,0 +1,25 @@
+---
+- name: install APT packages
+  apt:
+    name="{{ item }}"
+    state=installed
+  with_items:
+  - "python-pip"
+  - "python-selinux"
+  - "netcat"
+  - "lsof"
+  - "strace"
+  - "nmap"
+  - "moreutils"
+  - "xmlstarlet"
+  - "ncdu"
+  - "ack-grep"
+
+# FIXME: dpkg-divert --local --divert /usr/bin/ack --rename --add /usr/bin/ack-grep
+
+- name: install Python modules
+  pip:
+    name="{{ item }}"
+    state=present
+  with_items:
+  - "httplib2"
