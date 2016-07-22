@@ -1,4 +1,13 @@
 ---
-- name: reload UFW
-  ufw:
-    state=reloaded
+- name: restart DNS
+  service:
+    name="dnsmasq"
+    state=restarted
+
+- name: restart LXC
+  service:
+    name="{{ item }}"
+    state=restarted
+  with_items:
+  - "lxc"
+  - "lxc-net"

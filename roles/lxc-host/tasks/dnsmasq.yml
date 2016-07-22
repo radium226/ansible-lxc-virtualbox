@@ -1,52 +1,59 @@
 ---
-- name: install dnsmasq
+- name: install DNS
   apt:
     name="dnsmasq"
     state=installed
 
-- name: configure dnsmasq
-  template:
-    src="etc_dnsmasq.d_lxc-host.j2"
-    dest="/etc/dnsmasq.d/lxc-host"
+#- name: configure dnsmasq
+#  template:
+#    src="etc_dnsmasq.d_lxc-host.j2"
+#    dest="/etc/dnsmasq.d/lxc-host"
 
-- name: remove LXC built-in configuration
-  file:
-    path="/etc/dnsmasq.d/lxc"
-    state=absent
+#- name: remove LXC built-in configuration
+#  file:
+#    path="/etc/dnsmasq.d/lxc"
+#    state=absent
 
-- name: prevent dnsmasq to overwrite the /etc/resolv.conf file
-  lineinfile:
-    dest="/etc/default/dnsmasq"
-    regexp="#?DNSMASQ_EXCEPT=.*"
-    line="DNSMASQ_EXCEPT=lo"
+#- name: prevent dnsmasq to overwrite the /etc/resolv.conf file
+#  lineinfile:
+#    dest="/etc/default/dnsmasq"
+#    regexp="#?DNSMASQ_EXCEPT=.*"
+#    line="DNSMASQ_EXCEPT=lo"
 
-- name: start dnsmasq
+- name: configure DNS
+  copy:
+    content="server=/lxc/10.0.3.1"
+    dest="/etc/dnsmasq.d/lxc-domain"
+  notify:
+  - restart DNS
+
+- name: start DNS
   service:
     name="dnsmasq"
     state=started
     enabled=yes
 
-- name: append bridge IP in DHCP client
-  lineinfile:
-    dest="/etc/dhcp/dhclient.conf"
-    create=yes
-    line="prepend domain-name-servers {{ lxc_host_bridge_ip }};"
-  register: append_bridge_ip
+#- name: append bridge IP in DHCP client
+#  lineinfile:
+#    dest="/etc/dhcp/dhclient.conf"
+#    create=yes
+#    line="prepend domain-name-servers {{ lxc_host_bridge_ip }};"
+#  register: append_bridge_ip
 
-- name: restart network
-  service:
-    name="networking"
-    state=restarted
-  when: "{{ append_bridge_ip.changed }}"
+#- name: restart network
+#  service:
+#    name="networking"
+#    state=restarted
+#  when: "{{ append_bridge_ip.changed }}"
 
-- name: configure UFW for dnsmasq
-  ufw:
-    rule="{{ item.rule }}"
-    port="{{ item.port }}"
-  with_items:
-  - { port: "53", rule: "allow" }
-  - { port: "67", rule: "allow" }
-  - { port: "68", rule: "allow" }
+#- name: configure UFW for dnsmasq
+#  ufw:
+#    rule="{{ item.rule }}"
+#    port="{{ item.port }}"
+#  with_items:
+#  - { port: "53", rule: "allow" }
+#  - { port: "67", rule: "allow" }
+#  - { port: "68", rule: "allow" }
 
 #- name: configure firewall
 #  firewalld:

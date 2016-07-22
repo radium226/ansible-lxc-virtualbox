@@ -1,8 +1,6 @@
 lxc.network.type = veth
-lxc.network.link = {{ lxc_host_bridge_name }}
+lxc.network.link = lxcbr0
 lxc.network.flags = up
-lxc.network.name = eth0
+lxc.network.hwaddr = 00:16:3e:xx:xx:xx
 lxc.start.auto = 1
 lxc.group = onboot
-lxc.kmsg = 0
-lxc.autodev = 1

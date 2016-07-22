@@ -6,15 +6,37 @@
   with_items:
   - "lxc"
 
-- name: disable LXC built-in bridge
+- name: configure LXC
   lineinfile:
-    dest="/etc/default/lxc-net"
-    regexp="#?USE_LXC_BRIDGE=.*"
-    line="USE_LXC_BRIDGE=\"false\""
+    dest="{{ item.dest }}"
+    regexp="{{ item.regexp }}"
+    line="{{ item.line }}"
+    state=present
+  with_items:
+  - { dest: "/etc/default/lxc-net", regexp: "#?LXC_DOMAIN=.*", line: "LXC_DOMAIN=\"lxc\""}
+  - { dest: "/etc/default/lxc-net", regexp: "#?LXC_DHCP_CONFILE=.*", line: "LXC_DHCP_CONFILE=/etc/lxc/dnsmasq.conf"}
+  notify: restart LXC
+
+- name: copy lxc-dnsmasq-wildcard.sh
+  copy:
+    src="lxc-dnsmasq-wildcard.sh"
+    dest="/usr/local/bin/lxc-dnsmasq-wildcard.sh"
+    mode="u=rwx,g=rx,o=x"
+    owner="lxc-dnsmasq"
+    group="lxc-dnsmasq"
+
+- name: configure DNS for LXC
+  lineinfile:
+    line="dhcp-script=/usr/local/bin/lxc-dnsmasq-wildcard.sh"
+    dest="/etc/lxc/dnsmasq.conf"
+    state=present
+    create=yes
+  notify:
+  - restart DNS
 
 - name: configure LXC
   template:
-    src="templates/etc_lxc_default.conf.j2"
+    src="etc_lxc_default.conf.j2"
     dest="/etc/lxc/default.conf"
 
 - name: create drop-in folder for LXC service
@@ -27,11 +49,11 @@
     src="etc_systemd_system_lxc.service.d_99-dnsmasq.conf.j2"
     dest="/etc/systemd/system/lxc.service.d/99-dnsmasq.conf"
 
-
-- name: start lxc services
+- name: start LXC
   service:
     name="{{ item }}.service"
     state=started
     enabled=yes
   with_items:
   - "lxc"
+  - "lxc-net"
